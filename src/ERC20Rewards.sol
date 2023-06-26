@@ -150,6 +150,14 @@ contract ERC20Rewards is Owned, ERC20 {
         return super.transferFrom(from, to, amount);
     }
 
+    /// @notice Claim rewards for an user
+    function _claim(address from, address to, uint256 amount) internal virtual {
+        _updateUserRewards(from);
+        accumulatedRewards[from].accumulated -= amount.u128();
+        rewardsToken.safeTransfer(to, amount);
+        emit Claimed(from, to, amount);
+    }
+
     /// @dev Transfer tokens, after updating rewards for source and destination.
     function transfer(address to, uint amount) public virtual override returns (bool) {
         return _transfer(msg.sender, to, amount);
@@ -162,11 +170,22 @@ contract ERC20Rewards is Owned, ERC20 {
 
     /// @notice Claim all rewards for the caller
     function claim(address to) public virtual returns (uint256) {
-        uint256 claimed = _updateUserRewards(msg.sender).accumulated;
-        accumulatedRewards[msg.sender].accumulated = 0;
-        rewardsToken.safeTransfer(to, claimed);
-        emit Claimed(msg.sender, to, claimed);
+        uint256 claimed = currentUserRewards(msg.sender);
+        _claim(msg.sender, to, claimed);
 
         return claimed;
+    }
+
+    /// @notice Calculate and return current rewards per token.
+    function currentRewardsPerToken() public view returns (uint256) {
+        return _calculateRewardsPerToken(rewardsPerToken, rewardsInterval).accumulated;
+    }
+
+    /// @notice Calculate and return current rewards for a user.
+    /// @dev This repeats the logic used on transactions, but doesn't update the storage.
+    function currentUserRewards(address user) public view returns (uint256) {
+        UserRewards memory accumulatedRewards_ = accumulatedRewards[user];
+        RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken, rewardsInterval);
+        return accumulatedRewards_.accumulated + _calculateUserRewards(balanceOf[user], accumulatedRewards_.checkpoint, rewardsPerToken_.accumulated);
     }
 }

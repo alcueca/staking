@@ -159,13 +159,13 @@ contract SimpleRewards {
     }
 
     /// @notice Calculate and return current rewards per token.
-    function accumulatedRewardsPerToken() public view returns (uint256) {
+    function currentRewardsPerToken() public view returns (uint256) {
         return _calculateRewardsPerToken(rewardsPerToken, rewardsInterval).accumulated;
     }
 
     /// @notice Calculate and return current rewards for a user.
     /// @dev This repeats the logic used on transactions, but doesn't update the storage.
-    function rewards(address user) public view returns (uint256) {
+    function currentUserRewards(address user) public view returns (uint256) {
         UserRewards memory accumulatedRewards_ = accumulatedRewards[user];
         RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken, rewardsInterval);
         return accumulatedRewards_.accumulated + _calculateUserRewards(userStake[user], accumulatedRewards_.checkpoint, rewardsPerToken_.accumulated);

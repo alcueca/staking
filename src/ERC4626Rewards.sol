@@ -91,6 +91,8 @@ abstract contract ERC4626 is ERC20Rewards {
 
         _burn(owner, shares);
 
+        if (balanceOf[owner] == 0) _claim(owner, receiver, currentUserRewards(owner));
+
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
         asset.safeTransfer(receiver, assets);
@@ -113,6 +115,8 @@ abstract contract ERC4626 is ERC20Rewards {
         beforeWithdraw(assets, shares);
 
         _burn(owner, shares);
+
+        if (balanceOf[owner] == 0) _claim(owner, receiver, currentUserRewards(owner));
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
 
