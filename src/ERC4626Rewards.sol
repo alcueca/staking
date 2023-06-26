@@ -9,7 +9,7 @@ import { FixedPointMathLib } from "../lib/solmate/src/utils/FixedPointMathLib.so
 /// Taken from Solmate (https://github.com/transmissions11/solmate) but inheriting from ERC20Rewards
 
 
-abstract contract ERC4626 is ERC20Rewards {
+abstract contract ERC4626Rewards is ERC20Rewards {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
