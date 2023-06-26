@@ -14,7 +14,7 @@ import { Owned } from "../lib/solmate/src/auth/Owned.sol";
  * On transfer, the token is burned and the to receives his share of assets.
  * Two helper functions allow to convert between assets and shares.
  */
-contract ERC20RewardsWrapper is ERC20, Owned {
+contract ReplaceableRewardsToken is ERC20, Owned {
     using SafeTransferLib for ERC20;
 
     event AssetSet(ERC20 newAsset);
