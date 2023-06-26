@@ -6,3 +6,9 @@
   branch = "release-v0"
   path = "lib/prb-test"
   url = "https://github.com/PaulRBerg/prb-test"
+[submodule "lib/yield-utils-v2"]
+	path = lib/yield-utils-v2
+	url = https://github.com/alcueca/yield-utils-v2
+[submodule "lib/solmate"]
+	path = lib/solmate
+	url = https://github.com/transmissions11/solmate
