@@ -11,6 +11,8 @@ import { Cast } from "../lib/yield-utils-v2/src/utils/Cast.sol";
 /// The rate at which rewards are distributed is constant over time, but proportional to the amount of tokens staked by each staker.
 /// The contract expects to have received enough rewards tokens by the time they are claimable. The rewards tokens can only be recovered by claiming stakers.
 /// This is a rewriting of [Unipool.sol](https://github.com/k06a/Unipool/blob/master/contracts/Unipool.sol), modified for clarity and simplified.
+/// Careful if using non-standard ERC20 tokens, as they might break things.
+
 contract SimpleRewards {
     using SafeTransferLib for ERC20;
     using Cast for uint256;
@@ -36,11 +38,11 @@ contract SimpleRewards {
         uint128 checkpoint;                                         // RewardsPerToken the last time the user rewards were updated
     }
 
-    ERC20 public immutable stakingToken;                           // Token to be staked
+    ERC20 public immutable stakingToken;                            // Token to be staked
     uint256 public totalStaked;                                     // Total amount staked
     mapping (address => uint256) public userStake;                  // Amount staked per user
 
-    ERC20 public immutable rewardsToken;                           // Token used as rewards
+    ERC20 public immutable rewardsToken;                            // Token used as rewards
     uint256 public immutable rate;                                  // Wei rewarded per second among all token holders         
     RewardsInterval public rewardsInterval;                         // Interval in which rewards are accumulated by users
     RewardsPerToken public rewardsPerToken;                         // Accumulator to track rewards per token
@@ -53,25 +55,31 @@ contract SimpleRewards {
         rewardsInterval.start = start.u32();
         rewardsInterval.end = end.u32();
         rewardsPerToken.lastUpdated = start.u32();
-        rate = totalRewards / (end - start);    
+        rate = totalRewards / (end - start); // The contract will fail to deploy if end <= start, as it should
     }
 
     /// @notice Update the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
-    function _calculateRewardsPerToken(RewardsPerToken memory rewardsPerToken_, RewardsInterval memory rewardsInterval_) internal view returns(RewardsPerToken memory) {
-        // We skip the update if the program hasn't started
-        if (block.timestamp < rewardsInterval_.start) return rewardsPerToken_;
+    function _calculateRewardsPerToken(RewardsPerToken memory rewardsPerTokenIn, RewardsInterval memory rewardsInterval_) internal view returns(RewardsPerToken memory) {
+        RewardsPerToken memory rewardsPerTokenOut = RewardsPerToken(rewardsPerTokenIn.accumulated, rewardsPerTokenIn.lastUpdated);
+        uint256 totalStaked_ = totalStaked;
 
-        // We stop updating at the end of the rewards interval
+        // No changes if the program hasn't started
+        if (block.timestamp < rewardsInterval_.start) return rewardsPerTokenOut;
+
+        // Stop accumulating at the end of the rewards interval
         uint256 updateTime = block.timestamp < rewardsInterval_.end ? block.timestamp : rewardsInterval_.end;
-
-        // We skip the storage changes if already updated in the same block, or if the program has ended and was updated at the end
-        if (rewardsPerToken_.lastUpdated == updateTime) return rewardsPerToken_;
+        uint256 elapsed = updateTime - rewardsPerTokenIn.lastUpdated;
+        
+        // No changes if no time has passed
+        if (elapsed == 0) return rewardsPerTokenOut;
+        rewardsPerTokenOut.lastUpdated = updateTime.u32();
+        
+        // If there are no stakers we just change the last update time, the rewards for intervals without stakers are not accumulated
+        if (totalStaked == 0) return rewardsPerTokenOut;
 
         // Calculate and update the new value of the accumulator.
-        uint256 elapsed = updateTime - rewardsPerToken_.lastUpdated;
-        rewardsPerToken_.accumulated = (rewardsPerToken_.accumulated + 1e18 * elapsed * rate  / totalStaked).u128(); // The rewards per token are scaled up for precision
-        rewardsPerToken_.lastUpdated = updateTime.u32();
-        return rewardsPerToken_;
+        rewardsPerTokenOut.accumulated = (rewardsPerTokenIn.accumulated + 1e18 * elapsed * rate  / totalStaked_).u128(); // The rewards per token are scaled up for precision
+        return rewardsPerTokenOut;
     }
 
     /// @notice Calculate the rewards accumulated by a stake between two checkpoints.
@@ -81,11 +89,16 @@ contract SimpleRewards {
 
     /// @notice Update and return the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
     function _updateRewardsPerToken() internal returns (RewardsPerToken memory){
-        RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken, rewardsInterval);
-        rewardsPerToken = rewardsPerToken_;
-        emit RewardsPerTokenUpdated(rewardsPerToken_.accumulated);
+        RewardsPerToken memory rewardsPerTokenIn = rewardsPerToken;
+        RewardsPerToken memory rewardsPerTokenOut = _calculateRewardsPerToken(rewardsPerTokenIn, rewardsInterval);
 
-        return rewardsPerToken_;
+        // We skip the storage changes if already updated in the same block, or if the program has ended and was updated at the end
+        if (rewardsPerTokenIn.lastUpdated == rewardsPerTokenOut.lastUpdated) return rewardsPerTokenOut;
+
+        rewardsPerToken = rewardsPerTokenOut;
+        emit RewardsPerTokenUpdated(rewardsPerTokenOut.accumulated);
+
+        return rewardsPerTokenOut;
     }
 
     /// @notice Calculate and store current rewards for an user. Checkpoint the rewardsPerToken value with the user.
@@ -93,9 +106,13 @@ contract SimpleRewards {
         RewardsPerToken memory rewardsPerToken_ = _updateRewardsPerToken();
         UserRewards memory userRewards_ = accumulatedRewards[user];
         
+        // We skip the storage changes if already updated in the same block
+        if (userRewards_.checkpoint == rewardsPerToken_.lastUpdated) return userRewards_;
+        
         // Calculate and update the new value user reserves.
         userRewards_.accumulated += _calculateUserRewards(userStake[user], userRewards_.checkpoint, rewardsPerToken_.accumulated).u128();
         userRewards_.checkpoint = rewardsPerToken_.accumulated;
+
         accumulatedRewards[user] = userRewards_;
         emit UserRewardsUpdated(user, userRewards_.accumulated, userRewards_.checkpoint);
 

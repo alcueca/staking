@@ -53,14 +53,14 @@ contract ERC20Rewards is Owned, ERC20 {
         onlyOwner
     {
         require(
-            start <= end,
-            "Incorrect input"
+            start < end,
+            "Incorrect interval"
         );
 
         // A new rewards program can be set if one is not running
         require(
             block.timestamp.u32() < rewardsInterval.start || block.timestamp.u32() > rewardsInterval.end,
-            "Ongoing rewards"
+            "Rewards still ongoing"
         );
 
         // Update the rewards per token so that we don't lose any rewards
