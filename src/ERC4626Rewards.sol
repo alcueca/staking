@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import { SafeTransferLib, ERC20, ERC20Rewards } from "./ERC20Rewards.sol";
-import { FixedPointMathLib } from "../lib/solmate/src/utils/FixedPointMathLib.sol";
+import { FixedPointMathLib } from "@solmate/utils/FixedPointMathLib.sol";
 
 
 /// @notice ERC4626 tokenized Vault implementation with included rewards.

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import { ERC20 } from "../lib/solmate/src/tokens/ERC20.sol";
-import { SafeTransferLib } from "../lib/solmate/src/utils/SafeTransferLib.sol";
-import { Owned } from "../lib/solmate/src/auth/Owned.sol";
+import { ERC20 } from "@solmate/tokens/ERC20.sol";
+import { SafeTransferLib } from "@solmate/utils/SafeTransferLib.sol";
+import { Owned } from "@solmate/auth/Owned.sol";
 
 
 /// @dev A token inheriting from ERC20Rewards will reward token holders with a rewards token.
