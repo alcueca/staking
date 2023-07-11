@@ -21,12 +21,12 @@ contract ERC20Rewards is Owned, ERC20 {
     struct RewardsInterval {
         uint32 start;                                   // Start time for the current rewardsToken schedule
         uint32 end;                                     // End time for the current rewardsToken schedule
+        uint96 rate;                                    // Wei rewarded per second among all token holders
     }
 
     struct RewardsPerToken {
         uint128 accumulated;                            // Accumulated rewards per token for the interval, scaled up by 1e18
         uint32 lastUpdated;                             // Last time the rewards per token accumulator was updated
-        uint96 rate;                                    // Wei rewarded per second among all token holders
     }
 
     struct UserRewards {
@@ -65,16 +65,16 @@ contract ERC20Rewards is Owned, ERC20 {
         // Update the rewards per token so that we don't lose any rewards
         _updateRewardsPerToken();
 
+        uint256 rate = totalRewards / (end - start);  
         rewardsInterval.start = start.u32();
         rewardsInterval.end = end.u32();
+        rewardsInterval.rate = rate.u96();
 
         // If setting up a new rewards program, the rewardsPerToken.accumulated is used and built upon
         // New rewards start accumulating from the new rewards program start
         // Any unaccounted rewards from last program can still be added to the user rewards
         // Any unclaimed rewards can still be claimed
-        uint96 rate = (totalRewards / (end - start)).u96();  
         rewardsPerToken.lastUpdated = start.u32();
-        rewardsPerToken.rate = rate;
 
         emit RewardsSet(start.u32(), end.u32(), rate);
     }
@@ -82,7 +82,7 @@ contract ERC20Rewards is Owned, ERC20 {
 
     /// @notice Update the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
     function _calculateRewardsPerToken(RewardsPerToken memory rewardsPerTokenIn, RewardsInterval memory rewardsInterval_) internal view returns(RewardsPerToken memory) {
-        RewardsPerToken memory rewardsPerTokenOut = RewardsPerToken(rewardsPerTokenIn.accumulated, rewardsPerTokenIn.lastUpdated, rewardsPerTokenIn.rate);
+        RewardsPerToken memory rewardsPerTokenOut = RewardsPerToken(rewardsPerTokenIn.accumulated, rewardsPerTokenIn.lastUpdated);
         uint256 totalSupply_ = totalSupply;
 
         // No changes if the program hasn't started
@@ -100,7 +100,7 @@ contract ERC20Rewards is Owned, ERC20 {
         if (totalSupply_ == 0) return rewardsPerTokenOut;
 
         // Calculate and update the new value of the accumulator.
-        rewardsPerTokenOut.accumulated = (rewardsPerTokenIn.accumulated + 1e18 * elapsed * rewardsPerTokenIn.rate  / totalSupply_).u128(); // The rewards per token are scaled up for precision
+        rewardsPerTokenOut.accumulated = (rewardsPerTokenIn.accumulated + 1e18 * elapsed * rewardsInterval_.rate  / totalSupply_).u128(); // The rewards per token are scaled up for precision
         return rewardsPerTokenOut;
     }
 

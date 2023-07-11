@@ -10,7 +10,7 @@ contract MintableERC20Rewards is ERC20Rewards {
 
     /// @notice Helper to access the rate
     function rate() public view returns (uint256) {
-        return rewardsPerToken.rate;
+        return rewardsInterval.rate;
     }
 
     function mint(uint256 amount) external {

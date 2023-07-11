@@ -38,8 +38,8 @@ contract SimpleRewards {
 
     ERC20 public immutable rewardsToken;                            // Token used as rewards
     uint256 public immutable rewardsRate;                           // Wei rewarded per second among all token holders
-    uint256 public immutable rewardsStart;                           // Start of the rewards program
-    uint256 public immutable rewardsEnd;                             // End of the rewards program       
+    uint256 public immutable rewardsStart;                          // Start of the rewards program
+    uint256 public immutable rewardsEnd;                            // End of the rewards program       
     RewardsPerToken public rewardsPerToken;                         // Accumulator to track rewards per token
     mapping (address => UserRewards) public accumulatedRewards;     // Rewards accumulated per user
     
