@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import { ERC20 } from "../lib/solmate/src/tokens/ERC20.sol";
 import { SafeTransferLib } from "../lib/solmate/src/utils/SafeTransferLib.sol";
-import { Cast } from "../lib/yield-utils-v2/src/utils/Cast.sol";
 
 
 /// @notice Permissionless staking contract for a single rewards program.
@@ -186,5 +185,17 @@ contract SimpleRewards {
         UserRewards memory accumulatedRewards_ = accumulatedRewards[user];
         RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken, rewardsInterval);
         return accumulatedRewards_.accumulated + _calculateUserRewards(userStake[user], accumulatedRewards_.checkpoint, rewardsPerToken_.accumulated);
+    }
+}
+
+library Cast {
+    function u128(uint256 x) internal pure returns (uint128 y) {
+        require(x <= type(uint128).max, "Cast overflow");
+        y = uint128(x);
+    }
+
+    function u32(uint256 x) internal pure returns (uint32 y) {
+        require(x <= type(uint32).max, "Cast overflow");
+        y = uint32(x);
     }
 }
