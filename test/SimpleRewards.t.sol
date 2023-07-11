@@ -98,7 +98,7 @@ abstract contract NoStakedBefore is PRBTest, StdCheats {
 contract NoStakedBeforeTest is NoStakedBefore {
 
     function testCalcRewardsPerTokenBefore() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRPT = rewardsVault.currentRewardsPerToken();
@@ -115,7 +115,7 @@ contract NoStakedBeforeTest is NoStakedBefore {
     }
 
     function testCalcUserRewardsBefore() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRewards = rewardsVault.currentUserRewards(user);
@@ -186,7 +186,7 @@ abstract contract NoStakedDuring is NoStakedBefore {
 
 contract NoStakedDuringTest is NoStakedDuring {
     function testCalcRewardsPerToken() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRPT = rewardsVault.currentRewardsPerToken();
@@ -224,7 +224,7 @@ contract NoStakedDuringTest is NoStakedDuring {
     }
 
     function testCalcUserRewards() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRewards = rewardsVault.currentUserRewards(user);
@@ -262,7 +262,7 @@ contract NoStakedDuringTest is NoStakedDuring {
     }
 
     function testCalcRewardsPerTokenFromMiddle() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 totalStaked = rewardsVault.totalStaked();
@@ -284,7 +284,7 @@ contract NoStakedDuringTest is NoStakedDuring {
     }
 
     function testCalcUserRewardsFromMiddle() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRewards = rewardsVault.currentUserRewards(user);
@@ -303,7 +303,7 @@ contract NoStakedDuringTest is NoStakedDuring {
     }
 
     function testCalcRewardsPerTokenThroughEnd() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 totalStaked = rewardsVault.totalStaked();
@@ -322,7 +322,7 @@ contract NoStakedDuringTest is NoStakedDuring {
     }
 
     function testCalcUserRewardsThroughEnd() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 totalStaked = rewardsVault.totalStaked();
@@ -352,7 +352,7 @@ abstract contract NoStakedAfter is NoStakedDuring {
 contract NoStakedAfterTest is NoStakedAfter {
 
     function testCalcRewardsPerTokenAfter() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRPT = rewardsVault.currentRewardsPerToken();
@@ -369,7 +369,7 @@ contract NoStakedAfterTest is NoStakedAfter {
     }
 
     function testCalcUserRewardsAfter() public {
-        uint256 rate = rewardsVault.rate();
+        uint256 rate = rewardsVault.rewardsRate();
         assertNotEq(rate, 0, "Rate is zero");
 
         uint256 currentRewards = rewardsVault.currentUserRewards(user);

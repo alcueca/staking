@@ -22,11 +22,6 @@ contract SimpleRewards {
     event RewardsPerTokenUpdated(uint256 accumulated);
     event UserRewardsUpdated(address user, uint256 rewards, uint256 checkpoint);
 
-    struct RewardsInterval {
-        uint32 start;
-        uint32 end;
-    }
-
     struct RewardsPerToken {
         uint128 accumulated;                                        // Accumulated rewards per token for the interval, scaled up by 1e18
         uint32 lastUpdated;                                         // Last time the rewards per token accumulator was updated
@@ -42,31 +37,32 @@ contract SimpleRewards {
     mapping (address => uint256) public userStake;                  // Amount staked per user
 
     ERC20 public immutable rewardsToken;                            // Token used as rewards
-    uint256 public immutable rate;                                  // Wei rewarded per second among all token holders         
-    RewardsInterval public rewardsInterval;                         // Interval in which rewards are accumulated by users
+    uint256 public immutable rewardsRate;                           // Wei rewarded per second among all token holders
+    uint256 public immutable rewardsStart;                           // Start of the rewards program
+    uint256 public immutable rewardsEnd;                             // End of the rewards program       
     RewardsPerToken public rewardsPerToken;                         // Accumulator to track rewards per token
     mapping (address => UserRewards) public accumulatedRewards;     // Rewards accumulated per user
     
-    constructor(ERC20 stakingToken_, ERC20 rewardsToken_, uint256 start, uint256 end, uint256 totalRewards)
+    constructor(ERC20 stakingToken_, ERC20 rewardsToken_, uint256 rewardsStart_, uint256 rewardsEnd_, uint256 totalRewards)
     {
         stakingToken = stakingToken_;
         rewardsToken = rewardsToken_;
-        rewardsInterval.start = start.u32();
-        rewardsInterval.end = end.u32();
-        rewardsPerToken.lastUpdated = start.u32();
-        rate = totalRewards / (end - start); // The contract will fail to deploy if end <= start, as it should
+        rewardsStart = rewardsStart_;
+        rewardsEnd = rewardsEnd_;
+        rewardsRate = totalRewards / (rewardsEnd_ - rewardsStart_); // The contract will fail to deploy if end <= start, as it should
+        rewardsPerToken.lastUpdated = rewardsStart_.u32();
     }
 
     /// @notice Update the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
-    function _calculateRewardsPerToken(RewardsPerToken memory rewardsPerTokenIn, RewardsInterval memory rewardsInterval_) internal view returns(RewardsPerToken memory) {
+    function _calculateRewardsPerToken(RewardsPerToken memory rewardsPerTokenIn) internal view returns(RewardsPerToken memory) {
         RewardsPerToken memory rewardsPerTokenOut = RewardsPerToken(rewardsPerTokenIn.accumulated, rewardsPerTokenIn.lastUpdated);
         uint256 totalStaked_ = totalStaked;
 
         // No changes if the program hasn't started
-        if (block.timestamp < rewardsInterval_.start) return rewardsPerTokenOut;
+        if (block.timestamp < rewardsStart) return rewardsPerTokenOut;
 
         // Stop accumulating at the end of the rewards interval
-        uint256 updateTime = block.timestamp < rewardsInterval_.end ? block.timestamp : rewardsInterval_.end;
+        uint256 updateTime = block.timestamp < rewardsEnd ? block.timestamp : rewardsEnd;
         uint256 elapsed = updateTime - rewardsPerTokenIn.lastUpdated;
         
         // No changes if no time has passed
@@ -77,7 +73,7 @@ contract SimpleRewards {
         if (totalStaked == 0) return rewardsPerTokenOut;
 
         // Calculate and update the new value of the accumulator.
-        rewardsPerTokenOut.accumulated = (rewardsPerTokenIn.accumulated + 1e18 * elapsed * rate  / totalStaked_).u128(); // The rewards per token are scaled up for precision
+        rewardsPerTokenOut.accumulated = (rewardsPerTokenIn.accumulated + 1e18 * elapsed * rewardsRate / totalStaked_).u128(); // The rewards per token are scaled up for precision
         return rewardsPerTokenOut;
     }
 
@@ -89,7 +85,7 @@ contract SimpleRewards {
     /// @notice Update and return the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
     function _updateRewardsPerToken() internal returns (RewardsPerToken memory){
         RewardsPerToken memory rewardsPerTokenIn = rewardsPerToken;
-        RewardsPerToken memory rewardsPerTokenOut = _calculateRewardsPerToken(rewardsPerTokenIn, rewardsInterval);
+        RewardsPerToken memory rewardsPerTokenOut = _calculateRewardsPerToken(rewardsPerTokenIn);
 
         // We skip the storage changes if already updated in the same block, or if the program has ended and was updated at the end
         if (rewardsPerTokenIn.lastUpdated == rewardsPerTokenOut.lastUpdated) return rewardsPerTokenOut;
@@ -176,14 +172,14 @@ contract SimpleRewards {
 
     /// @notice Calculate and return current rewards per token.
     function currentRewardsPerToken() public view returns (uint256) {
-        return _calculateRewardsPerToken(rewardsPerToken, rewardsInterval).accumulated;
+        return _calculateRewardsPerToken(rewardsPerToken).accumulated;
     }
 
     /// @notice Calculate and return current rewards for a user.
     /// @dev This repeats the logic used on transactions, but doesn't update the storage.
     function currentUserRewards(address user) public view returns (uint256) {
         UserRewards memory accumulatedRewards_ = accumulatedRewards[user];
-        RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken, rewardsInterval);
+        RewardsPerToken memory rewardsPerToken_ = _calculateRewardsPerToken(rewardsPerToken);
         return accumulatedRewards_.accumulated + _calculateUserRewards(userStake[user], accumulatedRewards_.checkpoint, rewardsPerToken_.accumulated);
     }
 }
