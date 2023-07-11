@@ -24,7 +24,7 @@ contract SimpleRewards {
 
     struct RewardsPerToken {
         uint128 accumulated;                                        // Accumulated rewards per token for the interval, scaled up by 1e18
-        uint32 lastUpdated;                                         // Last time the rewards per token accumulator was updated
+        uint128 lastUpdated;                                        // Last time the rewards per token accumulator was updated
     }
 
     struct UserRewards {
@@ -50,7 +50,7 @@ contract SimpleRewards {
         rewardsStart = rewardsStart_;
         rewardsEnd = rewardsEnd_;
         rewardsRate = totalRewards / (rewardsEnd_ - rewardsStart_); // The contract will fail to deploy if end <= start, as it should
-        rewardsPerToken.lastUpdated = rewardsStart_.u32();
+        rewardsPerToken.lastUpdated = rewardsStart_.u128();
     }
 
     /// @notice Update the rewards per token accumulator according to the rate, the time elapsed since the last update, and the current total staked amount.
@@ -67,7 +67,7 @@ contract SimpleRewards {
         
         // No changes if no time has passed
         if (elapsed == 0) return rewardsPerTokenOut;
-        rewardsPerTokenOut.lastUpdated = updateTime.u32();
+        rewardsPerTokenOut.lastUpdated = updateTime.u128();
         
         // If there are no stakers we just change the last update time, the rewards for intervals without stakers are not accumulated
         if (totalStaked == 0) return rewardsPerTokenOut;
@@ -188,10 +188,5 @@ library Cast {
     function u128(uint256 x) internal pure returns (uint128 y) {
         require(x <= type(uint128).max, "Cast overflow");
         y = uint128(x);
-    }
-
-    function u32(uint256 x) internal pure returns (uint32 y) {
-        require(x <= type(uint32).max, "Cast overflow");
-        y = uint32(x);
     }
 }
