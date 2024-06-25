@@ -102,7 +102,7 @@ contract SimpleRewards {
         UserRewards memory userRewards_ = accumulatedRewards[user];
         
         // We skip the storage changes if already updated in the same block
-        if (userRewards_.checkpoint == rewardsPerToken_.lastUpdated) return userRewards_;
+        if (userRewards_.checkpoint == rewardsPerToken_.accumulated) return userRewards_;
         
         // Calculate and update the new value user reserves.
         userRewards_.accumulated += _calculateUserRewards(userStake[user], userRewards_.checkpoint, rewardsPerToken_.accumulated).u128();
